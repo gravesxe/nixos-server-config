@@ -1,0 +1,53 @@
+{
+  description = "NixOS Home Server Flake for HP ProDesk 600 G1 DM";
+
+  inputs = {
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs/nixos-unstable";
+    };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs = {
+        nixpkgs = {
+          follows = "nixpkgs";
+        };
+      };
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs = {
+        nixpkgs = {
+          follows = "nixpkgs";
+        };
+      };
+    };
+    nix-cachyos-kernel = {
+      url = "github:xddxdd/nix-cachyos-kernel/release";
+    };
+  };
+
+  outputs = { self, nixpkgs, disko, home-manager, nix-cachyos-kernel, ... }@inputs: {
+    nixosConfigurations = {
+      homeserver = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          ./disko.nix
+          ./config.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              extraSpecialArgs = { inherit inputs; };
+              users = {
+                admin = import ./home.nix;
+              };
+            };
+          }
+        ];
+      };
+    };
+  };
+}
